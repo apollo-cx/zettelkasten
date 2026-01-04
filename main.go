@@ -2,77 +2,116 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
 )
 
-/*const (
-	basePath = filepath
-)*/
+const (
+	filetype = ".txt"
+)
 
 func main() {
-	notebook := Notebook{
-		notes: make(map[int]*Note),
-	}
 
-	fmt.Println("-- 1. Try addNote() --")
-	notebook.addNote("hello")
-	notebook.addNote("my god")
-	notebook.addNote("so many notes")
-
-	notebook.listNotes()
-
-	fmt.Println("-- 2. Try removeNote() --")
-	notebook.removeNote(1)
-	notebook.removeNote(2)
-
-	notebook.listNotes()
-
-	fmt.Println("-- 3. Try editNote() --")
-	notebook.editNote(3, "hello")
-
-	notebook.listNotes()
 }
 
+/* Notes Stuff */
+
 type Notebook struct {
-	notes map[int]*Note
+	dirpath string
+	notes   map[string]*Note
 }
 
 type Note struct {
 	content string
-	path    string
 }
 
-func (nb *Notebook) addNote(content string) {
+func (nb *Notebook) Add(id, content string) {
 	note := Note{
 		content: content,
 	}
-	nb.notes[len(nb.notes)+1] = &note
+	nb.notes[id] = &note
 }
 
-func (nb *Notebook) editNote(id int, newContent string) error {
+func (nb *Notebook) Edit(id string, newContent string) error {
 	_, exists := nb.notes[id]
 	if !exists {
-		return fmt.Errorf("ID %d does not exist", id)
+		return fmt.Errorf("ID %v does not exist", id)
 	}
 	nb.notes[id].content = newContent
 	return nil
 }
 
-func (nb *Notebook) removeNote(id int) error {
+func (nb *Notebook) Remove(id string) error {
 	_, exists := nb.notes[id]
 	if !exists {
-		return fmt.Errorf("ID %d does not exist", id)
+		return fmt.Errorf("ID %v does not exist", id)
 	}
 	delete(nb.notes, id)
 	return nil
 }
 
-func (nb *Notebook) listNotes() error {
+func (nb *Notebook) List() error {
 	if len(nb.notes) == 0 {
 		return fmt.Errorf("No existing notes")
 	}
 	for id, note := range nb.notes {
-		fmt.Printf("NoteID: %d\nNote Content:\n%s", id, note.content)
+		fmt.Printf("NoteID: %v\nNote Content:\n%v", id, note.content)
 		fmt.Println()
 	}
+	return nil
+}
+
+func NewNotebook(dirpath string) Notebook {
+	return Notebook{
+		dirpath: dirpath,
+		notes:   make(map[string]*Note),
+	}
+}
+
+func NewFileID(title string) string {
+	year, month, day := time.Now().Date()
+	id := fmt.Sprintf("%s_%v-%v-%v", title, year, int(month), day)
+	return id
+}
+
+/* Persictance stuff */
+
+func loadNotebook(dir string) (Notebook, error) {
+	entries, err := os.ReadDir(dir)
+
+	if err != nil {
+		return Notebook{}, fmt.Errorf("Specified Notebook could not be loaded: %v", err)
+	}
+
+	notebook := NewNotebook(dir)
+
+	for _, entry := range entries {
+		name := entry.Name()
+
+		if entry.IsDir() {
+			continue
+		}
+
+		data, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			return Notebook{}, fmt.Errorf("File %s could not be read: %v", name, err)
+		}
+
+		notebook.Add(name, string(data))
+	}
+	return notebook, nil
+}
+
+func addNote(title string, content string, notebook Notebook) error {
+	basepath := notebook.dirpath
+	id := NewFileID(title)
+
+	err := os.WriteFile(filepath.Join(basepath, id+filetype), []byte(content), 0700)
+	if err != nil {
+		return err
+	}
+	notebook.Add(id, content)
+
 	return nil
 }
