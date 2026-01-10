@@ -51,6 +51,9 @@ func (nb *Notebook) Edit(id string, newContent string) error {
 		return fmt.Errorf("ID %v does not exist", id)
 	}
 
+	header := fmt.Sprintf("/*\nID:%s\nTITLE:%s\n*/", id, note.title)
+	newContent = header + newContent
+
 	err := os.WriteFile(filepath.Join(nb.dirpath, id+nb.filetype), []byte(newContent), 0644)
 	if err != nil {
 		return fmt.Errorf("File %s could not be edited: %v", id, err)
@@ -131,19 +134,36 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 			filepath: filepath,
 		}
 
+		isScanningHeader, isScanningBody := false, false
+		content := ""
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			switch true {
-			case strings.HasPrefix(line, "id:"):
-				note.id = cleanValue(line, "id:")
-
-			case strings.HasPrefix(line, "title:"):
-				note.title = cleanValue(line, "title")
-
-			case line == "*/":
-				break
+			if isScanningBody {
+				content += line + "\n"
+				continue
+			} else if isScanningHeader {
+				switch {
+				case line == "*/":
+					isScanningHeader, isScanningBody = false, true
+				case strings.HasPrefix(strings.ToLower(line), "id:"):
+					note.id = cleanValue(line, "id:")
+				case strings.HasPrefix(strings.ToLower(line), "title:"):
+					note.title = cleanValue(line, "title:")
+				}
+			} else {
+				if line == "/*" {
+					isScanningHeader, isScanningBody = true, false
+				}
+				continue
 			}
+		}
+
+		note.content = content
+
+		if note.id == "" {
+			fmt.Printf("Could'nt find note id in file: %s", note.filepath)
+			continue
 		}
 
 		notebook.notes[note.id] = note
@@ -152,6 +172,6 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 }
 
 func cleanValue(line, prefix string) string {
-	trimmed := strings.TrimPrefix(strings.ToLower(line), prefix)
-	return strings.TrimSpace(trimmed)
+	trimmed := strings.TrimSpace(line[len(prefix):])
+	return trimmed
 }
