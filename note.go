@@ -1,5 +1,8 @@
 package main
 
 type Note struct {
-	content string
+	id       string
+	title    string
+	content  string
+	filepath string
 }
