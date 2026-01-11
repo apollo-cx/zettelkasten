@@ -81,6 +81,12 @@ func (nb *Notebook) Remove(id string) error {
 	return nil
 }
 
+type Query struct {
+	id    string
+	title string
+	word  string
+}
+
 func (nb *Notebook) Search(query Query) []Note {
 	type scoredNote struct {
 		score int
@@ -223,11 +229,3 @@ func cleanValue(line, prefix string) string {
 	trimmed := strings.TrimSpace(line[len(prefix):])
 	return trimmed
 }
-
-type Query struct {
-	id    string
-	title string
-	word  string
-}
-
-func BuildQuery(string)
