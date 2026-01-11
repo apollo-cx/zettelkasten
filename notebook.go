@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -28,9 +29,9 @@ func (nb *Notebook) Add(id, title, content string) error {
 	}
 
 	header := fmt.Sprintf("/*\nID:%s\nTITLE:%s\n*/", id, title)
-	content = header + content
+	fullFileContent := header + content
 
-	err := os.WriteFile(filepath.Join(nb.dirpath, id+nb.filetype), []byte(content), 0644)
+	err := os.WriteFile(filepath.Join(nb.dirpath, id+nb.filetype), []byte(fullFileContent), 0644)
 	if err != nil {
 		return err
 	}
@@ -52,9 +53,9 @@ func (nb *Notebook) Edit(id string, newContent string) error {
 	}
 
 	header := fmt.Sprintf("/*\nID:%s\nTITLE:%s\n*/", id, note.title)
-	newContent = header + newContent
+	fullFileContent := header + newContent
 
-	err := os.WriteFile(filepath.Join(nb.dirpath, id+nb.filetype), []byte(newContent), 0644)
+	err := os.WriteFile(filepath.Join(nb.dirpath, id+nb.filetype), []byte(fullFileContent), 0644)
 	if err != nil {
 		return fmt.Errorf("File %s could not be edited: %v", id, err)
 	}
@@ -78,6 +79,53 @@ func (nb *Notebook) Remove(id string) error {
 	delete(nb.notes, id)
 
 	return nil
+}
+
+func (nb *Notebook) Search(query Query) []Note {
+	type scoredNote struct {
+		score int
+		note  Note
+	}
+	results := []scoredNote{}
+
+	for _, note := range nb.notes {
+		score := 0
+		if strings.ToLower(note.id) == query.id && query.id != "" {
+			score += 100
+		}
+
+		if strings.Contains(strings.ToLower(note.title), query.title) && query.title != "" {
+			if len(note.title) == len(query.title) {
+				score += 100
+			} else {
+				score += 50
+			}
+		}
+
+		if strings.Contains(strings.ToLower(note.content), query.word) && query.word != "" {
+			score += 10
+		}
+
+		if score > 0 {
+			results = append(results,
+				scoredNote{
+					score: score,
+					note:  note,
+				},
+			)
+		}
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].score > results[j].score
+	})
+
+	var sortedNotes []Note
+	for _, sn := range results {
+		sortedNotes = append(sortedNotes, sn.note)
+	}
+
+	return sortedNotes
 }
 
 func (nb *Notebook) List() map[string]Note {
@@ -175,3 +223,11 @@ func cleanValue(line, prefix string) string {
 	trimmed := strings.TrimSpace(line[len(prefix):])
 	return trimmed
 }
+
+type Query struct {
+	id    string
+	title string
+	word  string
+}
+
+func BuildQuery(string)
