@@ -16,37 +16,44 @@ type Notebook struct {
 	notes    map[string]Note
 }
 
-func (nb *Notebook) NewID(title string) string {
+func (nb *Notebook) NewID() string {
 	now := time.Now()
 	id := now.Format("200601021504")
 
 	return id
 }
 
-func (nb *Notebook) Add(id, title, content string) error {
+func (nb *Notebook) Add(title, content string) error {
+	id := nb.NewID()
 	if _, exists := nb.notes[id]; exists {
 		fmt.Errorf("File ID: %v already exists", id)
 	}
 
+	if title == "" {
+		title = id
+	}
+
 	header := fmt.Sprintf("/*\nID:%s\nTITLE:%s\n*/", id, title)
 	fullFileContent := header + content
+	filepath := filepath.Join(nb.dirpath, id+nb.filetype)
 
-	err := os.WriteFile(filepath.Join(nb.dirpath, id+nb.filetype), []byte(fullFileContent), 0644)
+	err := os.WriteFile(filepath, []byte(fullFileContent), 0644)
 	if err != nil {
 		return err
 	}
 
 	note := Note{
-		id:      id,
-		title:   title,
-		content: content,
+		id:       id,
+		title:    title,
+		content:  content,
+		filepath: filepath,
 	}
 	nb.notes[id] = note
 
 	return nil
 }
 
-func (nb *Notebook) Edit(id string, newContent string) error {
+func (nb *Notebook) Edit(id, newContent string) error {
 	note, exists := nb.notes[id]
 	if !exists {
 		return fmt.Errorf("ID %v does not exist", id)

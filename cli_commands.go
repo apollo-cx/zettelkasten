@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -18,6 +19,40 @@ func commandHelp() error {
 
 	fmt.Println()
 	return nil
+}
+
+func commandAdd(notebook Notebook, args []string) {
+	addCmd := flag.NewFlagSet("add", flag.ExitOnError)
+	titlePtr := addCmd.String("title", "", "Title of note")
+	editorPtr := addCmd.String("editor", "", "Editor to use")
+	addCmd.Parse(args)
+
+	editor := os.Getenv("EDITOR")
+	if *editorPtr != "" {
+		editor = *editorPtr
+	} else {
+		if editor == "" {
+			editor = "nano"
+		}
+	}
+
+	id := notebook.NewID()
+	err := notebook.Add(*titlePtr, "")
+	if err != nil {
+		fmt.Printf("Error creating file: %v\n", err)
+		return
+	}
+
+	note, ok := notebook.notes[id]
+	if !ok {
+		fmt.Printf("Error: Note with ID %s not found in notebook\n", id)
+		return
+	} else if err := note.OpenEditor(editor); err != nil {
+		fmt.Printf("Error during initial edit: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Note '%s' created and saved successfully!", note.title)
 }
 
 func commandSearch(notebook Notebook, args []string) {
