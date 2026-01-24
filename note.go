@@ -41,3 +41,13 @@ func readFile(filepath string) (content string, err error) {
 	content = string(data)
 	return content, nil
 }
+
+func getEditor(flagValue string) string {
+	editor := os.Getenv("EDITOR")
+	if flagValue != "" {
+		editor = flagValue
+	} else if editor == "" {
+		editor = "nano"
+	}
+	return editor
+}

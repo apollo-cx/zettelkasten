@@ -13,12 +13,12 @@ import (
 type Notebook struct {
 	dirpath  string
 	filetype string
-	notes    map[string]Note
+	notes    map[string]*Note
 }
 
 func (nb *Notebook) NewID() string {
 	now := time.Now()
-	id := now.Format("200601021504")
+	id := now.Format("20060102150405")
 
 	return id
 }
@@ -26,7 +26,7 @@ func (nb *Notebook) NewID() string {
 func (nb *Notebook) Add(title, content string) error {
 	id := nb.NewID()
 	if _, exists := nb.notes[id]; exists {
-		fmt.Errorf("File ID: %v already exists", id)
+		return fmt.Errorf("File ID: %v already exists", id)
 	}
 
 	if title == "" {
@@ -42,14 +42,14 @@ func (nb *Notebook) Add(title, content string) error {
 		return err
 	}
 
-	note := Note{
+	note := &Note{
 		id:       id,
 		title:    title,
 		content:  content,
 		filepath: filepath,
 	}
-	nb.notes[id] = note
 
+	nb.notes[id] = note
 	return nil
 }
 
@@ -68,8 +68,6 @@ func (nb *Notebook) Edit(id, newContent string) error {
 	}
 
 	note.content = newContent
-	nb.notes[id] = note
-
 	return nil
 }
 
@@ -84,7 +82,6 @@ func (nb *Notebook) Remove(id string) error {
 	}
 
 	delete(nb.notes, id)
-
 	return nil
 }
 
@@ -94,10 +91,10 @@ type Query struct {
 	word  string
 }
 
-func (nb *Notebook) Search(query Query) []Note {
+func (nb *Notebook) Search(query Query) []*Note {
 	type scoredNote struct {
 		score int
-		note  Note
+		note  *Note
 	}
 	results := []scoredNote{}
 
@@ -133,7 +130,7 @@ func (nb *Notebook) Search(query Query) []Note {
 		return results[i].score > results[j].score
 	})
 
-	var sortedNotes []Note
+	var sortedNotes []*Note
 	for _, sn := range results {
 		sortedNotes = append(sortedNotes, sn.note)
 	}
@@ -141,7 +138,7 @@ func (nb *Notebook) Search(query Query) []Note {
 	return sortedNotes
 }
 
-func (nb *Notebook) List() map[string]Note {
+func (nb *Notebook) List() map[string]*Note {
 	return nb.notes
 }
 
@@ -159,7 +156,7 @@ func NewNotebook(parentDir, name, filetype string) (Notebook, error) {
 	return Notebook{
 		dirpath:  path,
 		filetype: filetype,
-		notes:    make(map[string]Note),
+		notes:    make(map[string]*Note),
 	}, nil
 }
 
@@ -173,7 +170,7 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 	notebook := Notebook{
 		dirpath:  path,
 		filetype: filetype,
-		notes:    make(map[string]Note),
+		notes:    make(map[string]*Note),
 	}
 
 	for _, entry := range notebookDirectory {
@@ -191,7 +188,7 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 		defer file.Close()
 
 		scanner := bufio.NewScanner(file)
-		note := Note{
+		note := &Note{
 			filepath: filepath,
 		}
 
