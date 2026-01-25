@@ -8,7 +8,7 @@ import (
 	"github.com/apollo-cx/zettelkasten/internal/zettel"
 )
 
-func commandEdit(notebook zettel.Notebook, args []string) {
+func CommandEdit(notebook zettel.Notebook, args []string) {
 	editCmd := flag.NewFlagSet("edit", flag.ExitOnError)
 	editTitlePtr := editCmd.String("nt", "", "New title for note")
 	editorPtr := editCmd.String("e", "", "Editor to use")
@@ -29,7 +29,7 @@ func commandEdit(notebook zettel.Notebook, args []string) {
 
 	switch {
 	case len(results) == 0:
-		fmt.Println("No notes found matching '%v'\n", searchTerm)
+		fmt.Printf("No notes found matching '%v'\n", searchTerm)
 		return
 	case len(results) == 1:
 		targetNote = results[0]

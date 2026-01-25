@@ -1,10 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
-
-func commandHelp() error {
+/*func commandHelp() error {
 	fmt.Println()
 	fmt.Println("Welcom to Zettelkasten!")
 	fmt.Println("Usage")
@@ -16,4 +12,4 @@ func commandHelp() error {
 
 	fmt.Println()
 	return nil
-}
+}*/

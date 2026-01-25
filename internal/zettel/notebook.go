@@ -33,7 +33,7 @@ func (nb *Notebook) Add(title, content string) (Note, error) {
 		title = id
 	}
 
-	header := fmt.Sprintf("/*\nId:%s\nTitle:%s\n*/", id, title)
+	header := fmt.Sprintf("/*\nid:%s\ntitle:%s\n*/", id, title)
 	fullFileContent := header + content
 	filepath := filepath.Join(nb.Dirpath, id+nb.Filetype)
 
@@ -59,7 +59,7 @@ func (nb *Notebook) Edit(id, newContent string) error {
 		return fmt.Errorf("Id %v does not exist", id)
 	}
 
-	header := fmt.Sprintf("/*\nId:%s\nTitle:%s\n*/", id, note.Title)
+	header := fmt.Sprintf("/*\nid:%s\ntitle:%s\n*/", id, note.Title)
 	fullFileContent := header + newContent
 
 	err := os.WriteFile(filepath.Join(nb.Dirpath, id+nb.Filetype), []byte(fullFileContent), 0644)
@@ -204,10 +204,10 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 				switch {
 				case line == "*/":
 					isScanningHeader, isScanningBody = false, true
-				case strings.HasPrefix(strings.ToLower(line), "Id:"):
-					note.Id = cleanValue(line, "Id:")
-				case strings.HasPrefix(strings.ToLower(line), "Title:"):
-					note.Title = cleanValue(line, "Title:")
+				case strings.HasPrefix(strings.ToLower(line), "id:"):
+					note.Id = cleanValue(line, "id:")
+				case strings.HasPrefix(strings.ToLower(line), "title:"):
+					note.Title = cleanValue(line, "title:")
 				}
 			} else {
 				if line == "/*" {
@@ -220,7 +220,7 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 		note.Content = Content
 
 		if note.Id == "" {
-			fmt.Printf("Could'nt find note Id in file: %s", note.Filepath)
+			fmt.Printf("Could'nt find note id in file: %s", note.Filepath)
 			continue
 		}
 

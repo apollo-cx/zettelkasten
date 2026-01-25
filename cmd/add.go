@@ -7,7 +7,7 @@ import (
 	"github.com/apollo-cx/zettelkasten/internal/zettel"
 )
 
-func commandAdd(notebook zettel.Notebook, args []string) {
+func CommandAdd(notebook zettel.Notebook, args []string) {
 	addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 	titlePtr := addCmd.String("t", "", "Title of note")
 	editorPtr := addCmd.String("e", "", "Editor to use")

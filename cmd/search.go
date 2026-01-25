@@ -8,7 +8,7 @@ import (
 	"github.com/apollo-cx/zettelkasten/internal/zettel"
 )
 
-func commandSearch(notebook zettel.Notebook, args []string) {
+func CommandSearch(notebook zettel.Notebook, args []string) {
 	if len(args) == 0 {
 		fmt.Println("Error: nothing to search for")
 		return
