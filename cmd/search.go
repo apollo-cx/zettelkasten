@@ -1,12 +1,14 @@
-package main
+package cmd
 
 import (
 	"flag"
 	"fmt"
 	"strings"
+
+	"github.com/apollo-cx/zettelkasten/internal/zettel"
 )
 
-func commandSearch(notebook Notebook, args []string) {
+func commandSearch(notebook zettel.Notebook, args []string) {
 	if len(args) == 0 {
 		fmt.Println("Error: nothing to search for")
 		return
@@ -18,16 +20,16 @@ func commandSearch(notebook Notebook, args []string) {
 	wordPtr := searchCmd.String("w", "", "Word to search for")
 
 	searchCmd.Parse(args)
-	query := Query{}
+	query := zettel.Query{}
 
 	if *idPtr != "" {
-		query.id = *idPtr
+		query.Id = *idPtr
 	}
 	if *titlePtr != "" {
-		query.title = *titlePtr
+		query.Title = *titlePtr
 	}
 	if *wordPtr != "" {
-		query.word = *wordPtr
+		query.Word = *wordPtr
 	}
 
 	if searchCmd.NArg() > 0 {
@@ -35,10 +37,10 @@ func commandSearch(notebook Notebook, args []string) {
 		term := strings.Join(searchCmd.Args(), " ")
 
 		// If no specific flags were set, search for this term everywhere
-		if query.id == "" && query.title == "" && query.word == "" {
-			query.id = term
-			query.title = term
-			query.word = term
+		if query.Id == "" && query.Title == "" && query.Word == "" {
+			query.Id = term
+			query.Title = term
+			query.Word = term
 		}
 	}
 
@@ -46,6 +48,6 @@ func commandSearch(notebook Notebook, args []string) {
 
 	fmt.Printf("%d results:\n", len(results))
 	for _, result := range results {
-		fmt.Printf("%s -> %s\n", result.title, result.filepath)
+		fmt.Printf("%s -> %s\n", result.Title, result.Filepath)
 	}
 }

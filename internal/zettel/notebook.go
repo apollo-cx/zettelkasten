@@ -1,4 +1,4 @@
-package main
+package zettel
 
 import (
 	"bufio"
@@ -11,84 +11,84 @@ import (
 )
 
 type Notebook struct {
-	dirpath  string
-	filetype string
-	notes    map[string]*Note
+	Dirpath  string
+	Filetype string
+	Notes    map[string]*Note
 }
 
-func (nb *Notebook) NewID() string {
+func newId() string {
 	now := time.Now()
 	id := now.Format("20060102150405")
 
 	return id
 }
 
-func (nb *Notebook) Add(title, content string) error {
-	id := nb.NewID()
-	if _, exists := nb.notes[id]; exists {
-		return fmt.Errorf("File ID: %v already exists", id)
+func (nb *Notebook) Add(title, content string) (Note, error) {
+	id := newId()
+	if _, exists := nb.Notes[id]; exists {
+		return Note{}, fmt.Errorf("File Id: %v already exists", id)
 	}
 
 	if title == "" {
 		title = id
 	}
 
-	header := fmt.Sprintf("/*\nID:%s\nTITLE:%s\n*/", id, title)
+	header := fmt.Sprintf("/*\nId:%s\nTitle:%s\n*/", id, title)
 	fullFileContent := header + content
-	filepath := filepath.Join(nb.dirpath, id+nb.filetype)
+	filepath := filepath.Join(nb.Dirpath, id+nb.Filetype)
 
 	err := os.WriteFile(filepath, []byte(fullFileContent), 0644)
 	if err != nil {
-		return err
+		return Note{}, err
 	}
 
 	note := &Note{
-		id:       id,
-		title:    title,
-		content:  content,
-		filepath: filepath,
+		Id:       id,
+		Title:    title,
+		Content:  content,
+		Filepath: filepath,
 	}
 
-	nb.notes[id] = note
-	return nil
+	nb.Notes[id] = note
+	return *note, err
 }
 
 func (nb *Notebook) Edit(id, newContent string) error {
-	note, exists := nb.notes[id]
+	note, exists := nb.Notes[id]
 	if !exists {
-		return fmt.Errorf("ID %v does not exist", id)
+		return fmt.Errorf("Id %v does not exist", id)
 	}
 
-	header := fmt.Sprintf("/*\nID:%s\nTITLE:%s\n*/", id, note.title)
+	header := fmt.Sprintf("/*\nId:%s\nTitle:%s\n*/", id, note.Title)
 	fullFileContent := header + newContent
 
-	err := os.WriteFile(filepath.Join(nb.dirpath, id+nb.filetype), []byte(fullFileContent), 0644)
+	err := os.WriteFile(filepath.Join(nb.Dirpath, id+nb.Filetype), []byte(fullFileContent), 0644)
 	if err != nil {
 		return fmt.Errorf("File %s could not be edited: %v", id, err)
 	}
 
-	note.content = newContent
+	note.Content = newContent
 	return nil
 }
 
 func (nb *Notebook) Remove(id string) error {
-	if _, exists := nb.notes[id]; !exists {
-		return fmt.Errorf("ID %v does not exist", id)
+	if _, exists := nb.Notes[id]; !exists {
+		return fmt.Errorf("Id %v does not exist", id)
 	}
 
-	err := os.Remove(filepath.Join(nb.dirpath, id+nb.filetype))
+	err := os.Remove(filepath.Join(nb.Dirpath, id+nb.Filetype))
 	if err != nil {
 		return fmt.Errorf("File %s could not be deleted: %v", id, err)
 	}
 
-	delete(nb.notes, id)
+	delete(nb.Notes, id)
 	return nil
 }
 
 type Query struct {
-	id    string
-	title string
-	word  string
+	Id    string
+	Title string
+	Word  string
 }
 
 func (nb *Notebook) Search(query Query) []*Note {
@@ -98,21 +98,21 @@ func (nb *Notebook) Search(query Query) []*Note {
 	}
 	results := []scoredNote{}
 
-	for _, note := range nb.notes {
+	for _, note := range nb.Notes {
 		score := 0
-		if strings.ToLower(note.id) == query.id && query.id != "" {
+		if strings.ToLower(note.Id) == query.Id && query.Id != "" {
 			score += 100
 		}
 
-		if strings.Contains(strings.ToLower(note.title), query.title) && query.title != "" {
-			if len(note.title) == len(query.title) {
+		if strings.Contains(strings.ToLower(note.Title), query.Title) && query.Title != "" {
+			if len(note.Title) == len(query.Title) {
 				score += 100
 			} else {
 				score += 50
 			}
 		}
 
-		if strings.Contains(strings.ToLower(note.content), query.word) && query.word != "" {
+		if strings.Contains(strings.ToLower(note.Content), query.Word) && query.Word != "" {
 			score += 10
 		}
 
@@ -139,12 +139,12 @@ func (nb *Notebook) Search(query Query) []*Note {
 }
 
 func (nb *Notebook) List() map[string]*Note {
-	return nb.notes
+	return nb.Notes
 }
 
 func NewNotebook(parentDir, name, filetype string) (Notebook, error) {
 	if _, err := os.Stat(parentDir); err != nil {
-		return Notebook{}, fmt.Errorf("Invalid Path: %v", err)
+		return Notebook{}, fmt.Errorf("InvalId Path: %v", err)
 	}
 	path := filepath.Join(parentDir, name)
 
@@ -154,9 +154,9 @@ func NewNotebook(parentDir, name, filetype string) (Notebook, error) {
 	}
 
 	return Notebook{
-		dirpath:  path,
-		filetype: filetype,
-		notes:    make(map[string]*Note),
+		Dirpath:  path,
+		Filetype: filetype,
+		Notes:    make(map[string]*Note),
 	}, nil
 }
 
@@ -168,9 +168,9 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 	}
 
 	notebook := Notebook{
-		dirpath:  path,
-		filetype: filetype,
-		notes:    make(map[string]*Note),
+		Dirpath:  path,
+		Filetype: filetype,
+		Notes:    make(map[string]*Note),
 	}
 
 	for _, entry := range notebookDirectory {
@@ -189,25 +189,25 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 
 		scanner := bufio.NewScanner(file)
 		note := &Note{
-			filepath: filepath,
+			Filepath: filepath,
 		}
 
 		isScanningHeader, isScanningBody := false, false
-		content := ""
+		Content := ""
 		for scanner.Scan() {
 			line := scanner.Text()
 
 			if isScanningBody {
-				content += line + "\n"
+				Content += line + "\n"
 				continue
 			} else if isScanningHeader {
 				switch {
 				case line == "*/":
 					isScanningHeader, isScanningBody = false, true
-				case strings.HasPrefix(strings.ToLower(line), "id:"):
-					note.id = cleanValue(line, "id:")
-				case strings.HasPrefix(strings.ToLower(line), "title:"):
-					note.title = cleanValue(line, "title:")
+				case strings.HasPrefix(strings.ToLower(line), "Id:"):
+					note.Id = cleanValue(line, "Id:")
+				case strings.HasPrefix(strings.ToLower(line), "Title:"):
+					note.Title = cleanValue(line, "Title:")
 				}
 			} else {
 				if line == "/*" {
@@ -217,14 +217,14 @@ func LoadNotebook(path, filetype string) (Notebook, error) {
 			}
 		}
 
-		note.content = content
+		note.Content = Content
 
-		if note.id == "" {
-			fmt.Printf("Could'nt find note id in file: %s", note.filepath)
+		if note.Id == "" {
+			fmt.Printf("Could'nt find note Id in file: %s", note.Filepath)
 			continue
 		}
 
-		notebook.notes[note.id] = note
+		notebook.Notes[note.Id] = note
 	}
 	return notebook, nil
 }

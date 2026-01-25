@@ -1,18 +1,20 @@
-package main
+package cmd
 
 import (
 	"flag"
 	"fmt"
 	"strings"
+
+	"github.com/apollo-cx/zettelkasten/internal/zettel"
 )
 
-func commandEdit(notebook Notebook, args []string) {
+func commandEdit(notebook zettel.Notebook, args []string) {
 	editCmd := flag.NewFlagSet("edit", flag.ExitOnError)
 	editTitlePtr := editCmd.String("nt", "", "New title for note")
 	editorPtr := editCmd.String("e", "", "Editor to use")
 	editCmd.Parse(args)
 
-	editor := getEditor(*editorPtr)
+	editor := GetEditor(*editorPtr)
 
 	if editCmd.NArg() == 0 {
 		fmt.Println("Error: pleas provide search term or ID to edit")
@@ -20,14 +22,14 @@ func commandEdit(notebook Notebook, args []string) {
 	}
 	searchTerm := strings.Join(editCmd.Args(), " ")
 
-	query := Query{id: searchTerm, title: searchTerm, word: searchTerm}
+	query := zettel.Query{Id: searchTerm, Title: searchTerm, Word: searchTerm}
 	results := notebook.Search(query)
 
-	var targetNote *Note
+	var targetNote *zettel.Note
 
 	switch {
 	case len(results) == 0:
-		fmt.Println("No notes found matching '%s'\n", searchTerm)
+		fmt.Println("No notes found matching '%v'\n", searchTerm)
 		return
 	case len(results) == 1:
 		targetNote = results[0]
@@ -46,23 +48,23 @@ func commandEdit(notebook Notebook, args []string) {
 	}
 
 	if *editTitlePtr != "" {
-		targetNote.title = *editTitlePtr
+		targetNote.Title = *editTitlePtr
 	}
 
-	err := notebook.Edit(targetNote.id, targetNote.content)
+	err := notebook.Edit(targetNote.Id, targetNote.Content)
 	if err != nil {
 		fmt.Printf("Error saving changes to disk: %w\n", err)
 		return
 	}
 
-	fmt.Printf("Note '%s' (ID: %s) updated successfully!\n", targetNote.title, targetNote.id)
+	fmt.Printf("Note '%s' (ID: %s) updated successfully!\n", targetNote.Title, targetNote.Id)
 
 }
 
-func promptSelcection(results []*Note) (*Note, error) {
+func promptSelcection(results []*zettel.Note) (*zettel.Note, error) {
 	fmt.Println("Multiple notes found. Pleas select one:")
 	for i, note := range results {
-		fmt.Printf("[%d] %s (ID: %s)\n", i+1, note.title, note.id)
+		fmt.Printf("[%d] %s (ID: %s)\n", i+1, note.Title, note.Id)
 	}
 
 	fmt.Print("Chose by entering a number: ")

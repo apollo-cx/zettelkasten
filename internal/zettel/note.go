@@ -1,4 +1,4 @@
-package main
+package zettel
 
 import (
 	"fmt"
@@ -7,14 +7,14 @@ import (
 )
 
 type Note struct {
-	id       string
-	title    string
-	content  string
-	filepath string
+	Id       string
+	Title    string
+	Content  string
+	Filepath string
 }
 
 func (n *Note) OpenEditor(editor string) error {
-	cmd := exec.Command(editor, n.filepath)
+	cmd := exec.Command(editor, n.Filepath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -23,12 +23,12 @@ func (n *Note) OpenEditor(editor string) error {
 		return err
 	}
 
-	updatedContent, err := readFile(n.filepath)
+	updatedContent, err := readFile(n.Filepath)
 	if err != nil {
 		return fmt.Errorf("failed to sync file to notebook: %w", err)
 	}
 
-	n.content = string(updatedContent)
+	n.Content = string(updatedContent)
 	return nil
 }
 
@@ -40,14 +40,4 @@ func readFile(filepath string) (content string, err error) {
 
 	content = string(data)
 	return content, nil
-}
-
-func getEditor(flagValue string) string {
-	editor := os.Getenv("EDITOR")
-	if flagValue != "" {
-		editor = flagValue
-	} else if editor == "" {
-		editor = "nano"
-	}
-	return editor
 }
